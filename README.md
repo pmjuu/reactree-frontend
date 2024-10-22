@@ -1,9 +1,11 @@
+🇰🇷 [Korean README](./README-Korean.md)
+
 # Reactree
 
 <div align=center>
 
 ### _" React + Tree "_
-**리액트** 프로젝트의 컴포넌트 계층 구조를 **트리** 구조로 시각화해주는 앱 서비스입니다.
+This is an app service that visualizes the **component hierarchy** of a **React** project in a **tree** structure.
 
 </div>
 
@@ -14,12 +16,12 @@
 - [Preview](#Preview)
 - [Motivation](#Motivation)
 - [Challenges](#Challenges)
-  - [1. 사용자 코드를 어떻게 파싱할까?](#1-사용자-코드를-어떻게-파싱할까)
-    - [React Fiber에서 데이터 추출하기](#react-fiber에서-데이터-추출하기)
-  - [2. 일렉트론 앱 내부 함수를 사용자 디렉토리에서 어떻게 실행시킬 수 있을까?](#2-일렉트론-앱-내부-함수를-사용자-디렉토리에서-어떻게-실행시킬-수-있을까)
-    - [SymLink를 통해 사용자 디렉토리에서 reactree 함수에 접근하기](#symlink를-통해-사용자-디렉토리에서-reactree-함수에-접근하기)
-  - [3. 사용자 디렉토리에서 rootFiberNode를 어떻게 전송할 수 있을까?](#3-사용자-디렉토리에서-rootfibernode를-어떻게-전송할-수-있을까)
-  - [4. 사용자 프로젝트가 큰 경우 데이터 전송의 안정성을 어떻게 높일 수 있을까?](#4-사용자-프로젝트가-큰-경우-데이터-전송의-안정성을-어떻게-높일-수-있을까)
+  - [1. How to parse user code?](#1-how-to-parse-user-code)
+    - [Extracting data from React Fiber](#extracting-data-from-react-fiber)
+  - [2. How to run internal Electron app functions from the user directory?](#2-how-to-run-internal-electron-app-functions-from-the-user-directory)
+    - [Accessing reactree functions from the user directory via SymLink](#accessing-reactree-functions-from-the-user-directory-via-symlink)
+  - [3. How to transmit rootFiberNode from the user directory?](#3-how-to-transmit-rootfibernode-from-the-user-directory)
+  - [4. How to improve data transmission stability in large user projects?](#4-how-to-improve-data-transmission-stability-in-large-user-projects)
 - [Tech stacks](#Tech-stacks)
 - [Features](#Features)
 - [Timeline](#Timeline)
@@ -28,30 +30,30 @@
 
 # Preview
 
-🔽 폴더 선택 후 트리구조 렌더링
+🔽 Rendering the tree structure after folder selection
 ![reactreeGIF1](https://user-images.githubusercontent.com/50537876/228586806-b776bc89-8750-49f8-8a9d-8f969f12b7a7.gif)
 <br><br>
-🔽 트리구조 줌인/줌아웃, 슬라이더바 조절, 노드 마우스 이벤트(호버링, 클릭)
+🔽 Zoom in/out of the tree structure, adjust the slider bar, mouse events on nodes (hovering, clicking)
 ![reactreeGIF2](https://user-images.githubusercontent.com/50537876/228586858-d02b2f78-151e-4ee9-b837-433cb2b20b17.gif)
 
 <br>
 
 # Motivation
 
-리액트 공부를 시작했을 때 또는 다른 사람이 만든 리액트 프로젝트 코드를 처음 읽을 때, 전체적인 컴포넌트 구조를 이해하는 데 시간이 걸렸습니다.
-‘렌더링된 컴포넌트의 구조를 시각화해서 같이 보여준다면 리액트로 개발하는 것에 더 도움이 되지 않을까’ 라는 생각으로 이 프로젝트를 시작하게 되었습니다.
+When I first started learning React or when I read someone else's React project code for the first time, it took time to understand the overall component structure. <br>
+I thought, "Wouldn't it be helpful for developing with React if we could visualize and display the structure of the rendered components?" This thought led to the start of this project.
 
 <br>
 
 # Challenges
 
-## 1. 사용자 코드를 어떻게 파싱할까?
+## 1. How to parse user code?
 
-### 시도한 방법
+### Attempted Methods
 
-#### Github에 API요청을 보내서 코드를 문자열로 받기
+#### Sending an API request to Github to receive the code as a string
   ```js
-  // github repo 정보를 받아오는 api
+  // API to retrieve GitHub repository information
   async function getGit(owner, repo, path) {
     const dataResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
     const data = await dataResponse.json();
@@ -64,17 +66,17 @@
 
   await getGit("pmjuu", "my-workout-manager", "src/App.js");
   ```
-  🔽 콘솔 결과물 - 실제 Repo에 있는 파일 코드를 문자열로 받아오는 것이 가능했습니다.
+  🔽 Console output: It was possible to retrieve the file code from an actual repository as a string.<br>
   <img src="https://github.com/pmjuu/climick-client/assets/50537876/337ff9d6-2811-4436-a010-94570bc7d621" width=400><br>
 
-* 외부 library 없이 문자열을 javascript 문법으로 파싱하기에는 경우의 수가 너무 많아서, 제한시간 내에 구현하기는 힘들다고 판단했습니다.
+=> We concluded that it would be too difficult to implement parsing the string into JavaScript syntax without using an external library due to the many edge cases, making it hard to achieve within the time limit.
 
-#### ReactDOMServer Object 활용하기
+#### Utilizing the ReactDOMServer Object
   ```js
   import React from "react";
   import ReactDOMServer from "react-dom/server";
 
-  // 확인하고 싶은 컴포넌트
+  // Component to check
   const MyComponent = () => {
     return (
       <div>
@@ -84,10 +86,10 @@
     );
   };
 
-  // 컴포넌트를 HTML로 렌더링한다.
+  // Render the component to HTML
   const html = ReactDOMServer.renderToString(<MyComponent />);
 
-  // HTML에서 DOM Tree를 추출해서 시각화한다
+  // Extract the DOM Tree from the HTML and visualize it
   const parser = new DOMParser();
   const dom = parser.parseFromString(html, "text/html");
   const tree = dom.body.firstChild;
@@ -96,10 +98,10 @@
   ```
   <img src="https://github.com/pmjuu/climick-client/assets/50537876/ab1b7c1d-bfb3-4c2e-ad7c-f245afd90041" width=300><br>
 
-* ReactDOMServer 객체를 사용하여 컴포넌트를 정적 마크업으로 렌더링할 수 있습니다.
-* 그런데 Component 또한 일반 태그로 출력돼서 Component 이름을 별도로 추출할 수 있는 작업이 필요했습니다.
+* We could render a component into static markup using the ReactDOMServer object.
+* However, components are also rendered as regular tags, so it was necessary to perform additional work to extract the component names separately.
 
-#### `React.Children` 속성 활용하기
+#### Utilizing the `React.Children` property
   ```js
   function buildTree(components) {
     const tree = {
@@ -120,16 +122,16 @@
     return tree.children.length ? tree.children : null;
   }
   ```
-* Component의 이름을 추출해 계층구조 시각화는 할 수 있었습니다.
-* 그러나 App Component의 `return` 구문 내에 선언된 Component에만 국한되는 문제가 있었습니다. <br>
-  (일반 태그들은 표시되지 않음.)
-* 또한 Conditional Rendering에 대해서 추가적인 로직이 필요했습니다.
+* I was able to extract the names of the components and visualize the hierarchy.
+* However, it was limited to the components declared within the `return` statement of the App component.  
+  (Regular tags were not displayed.)
+* Additionally, extra logic was needed for handling conditional rendering.
 
-#### react-d3-tree package 사용하기
-* react-d3-tree 패키지를 사용해 DOM Tree를 파싱하고 Tree 구조를 생성할 수 있었습니다.
-* 그러나 프로젝트 메인 로직의 패키지에 대한 의존성이 커서 기술적 챌린지가 부족하고 커스터마이징이 어려웠습니다.
+#### Using the react-d3-tree package
+* I was able to parse the DOM tree and generate a tree structure using the react-d3-tree package.
+* However, the main logic of the project became heavily dependent on the package, which led to a lack of technical challenges and made customization difficult.
   <details>
-    <summary>코드</summary>
+    <summary>Code</summary>
 
     ```js
     import React, { useState, useEffect } from "react";
@@ -139,10 +141,10 @@
       const [treeData, setTreeData] = useState({});
 
       useEffect(() => {
-        // DOM Tree의 root element를 변수에 할당
+        // Assign the root element of the DOM tree to a variable
         const rootElement = document.documentElement;
 
-        // DOM Tree를 파싱해서 생성하려는 tree 데이터 구조 생성
+        // Parse the DOM tree and create the tree data structure
         function createTree(node) {
           const tree = {};
           tree.name = node.tagName.toLowerCase();
@@ -172,29 +174,29 @@
 
   <img width=300 src="https://github.com/pmjuu/climick-client/assets/50537876/ca17a12b-d3db-498e-af4d-d7a85ca90e4a">
 
-### 결론
+### Conclusion
 
-* 코드 파싱이 아니라 현재 화면에 렌더링된 컴포넌트 정보를 이용합니다.<br>
-    -> **React Fiber** 활용하기
-* 사용자의 로컬 디렉토리에서 `npm start`를 실행시켜서 localhost에서 렌더링된 화면을 일렉트론 view로 보여줍니다.<br>
-    -> **Electron** 앱에서 `child_process` 활용하기
+* Instead of parsing the code, we use the information of the currently rendered components on the screen.<br>
+    -> **Utilizing React Fiber**
+* The rendered screen on localhost is displayed in the Electron view by running `npm start` from the user's local directory.<br>
+    -> **Utilizing `child_process` in an Electron app**
 
-#### React Fiber란?
+#### What is React Fiber?
 
-* React v16 에서 리액트의 핵심 알고리즘을 재구성한 새로운 재조정(Reconciliation) 알고리즘입니다.
-* 모든 작업을 동기적으로 실행하던 기존의 stack reconciler의 단점을 보완하여 concurrency가 가능해집니다.
-* 특정 작업에 우선순위를 매겨 작업의 일부분을 concurrent하게 일시정지, 재가동 할 수 있게 하여 incremental rendering이 가능합니다.
+* React Fiber is a new reconciliation algorithm that restructured React's core algorithm in React v16.
+* It complements the drawbacks of the old stack reconciler, which executed all tasks synchronously, allowing for concurrency.
+* By assigning priorities to certain tasks, it allows parts of the task to be paused and resumed concurrently, enabling incremental rendering.
 
-#### Fiber의 구조
+#### Structure of Fiber
 
-* fiber는 컴포넌트 및 컴포넌트의 입력과 출력에 대한 정보를 포함한 자바스크립트 객체입니다.
-* `current`, `workInProgress` 2개의 트리 구조로 구성됩니다.
-* 각 `fiberNode`가 `return`, `child`, `sibiling` 포인터 값으로 자신의 다음 노드를 가리키는, 단일 연결리스트 형태를 띄고 있습니다.
+* A fiber is a JavaScript object that contains information about a component and its inputs and outputs.
+* It consists of two tree structures: `current` and `workInProgress`.
+* Each `fiberNode` has a single linked list structure, pointing to its next node via `return`, `child`, and `sibling` pointers.
 
-### React Fiber에서 데이터 추출하기
+### Extracting Data from React Fiber
 
-* `d3.js`를 통해 컴포넌트 구조를 시각화하려면 데이터를 트리 구조 형태로 만들어야 했습니다.
-* 연결리스트 형태인 fiber를 트리 구조로 바꾸기 위해 재귀함수 `createNode()`를 만들어서 컴포넌트 트리 구조 데이터를 추출했습니다.
+* In order to visualize the component structure using `d3.js`, the data needed to be structured in a tree format.
+* To transform the fiber, which is in the form of a linked list, into a tree structure, I created a recursive function `createNode()` to extract the component tree structure data.
   ```js
   import TreeNode from "./TreeNode";
 
@@ -237,10 +239,10 @@
     return tree;
   }
   ```
-* 각 노드는 `tag`로 구분되는데, 데이터 추출 과정에서 `tag`를 기준으로 트리 구조 시각화에 불필요한 노드는 제외시켰습니다.
-* 순환참조를 일으키는 속성이 다수 존재합니다. <br>
-  이 때문에 json파일 생성과정에서 `JSON.stringify()`를 실행할 수 없었기에 순환참조 속성은 제외시켰습니다.<br>
-  🔽 fiberNode tag 분류
+* Each node is classified by its `tag`, and during the data extraction process, nodes that were unnecessary for visualizing the tree structure were excluded based on their `tag`.
+* There are many properties that cause circular references.<br>
+  Due to this, it was not possible to execute `JSON.stringify()` during the JSON file generation process, so circular reference properties were excluded.<br>
+  🔽 Classification of fiberNode tags
   ```js
   export const FunctionComponent = 0;
   export const ClassComponent = 1;
@@ -270,33 +272,33 @@
   export const HostHoistable = 26;
   export const HostSingleton = 27;
   ```
-  <sub>출처: <a href="https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js">react Github - type WorkTag</a></sub>
+  <sub>Reference: <a href="https://github.com/facebook/react/blob/main/packages/react-reconciler/src/ReactWorkTags.js">react Github - type WorkTag</a></sub>
 <br>
 
-## 2. 일렉트론 앱 내부 함수를 사용자 디렉토리에서 어떻게 실행시킬 수 있을까?
+## 2. How to run internal Electron app functions from the user directory?
 
-### 시도한 방법
+### Attempted Methods
 
-* 우리가 만든 함수를 npm package에 등록해서 활용하기
-  - 사용자가 npm 패키지를 설치하고 분석하려는 프로젝트의 코드에 추가 작성해야 하는 번거로움이 있습니다.
+* Registering the function we created as an npm package and utilizing it
+  - This method is inconvenient because the user would need to install the npm package and manually add code to the project they want to analyze.
 
-### 결론
+### Conclusion
 
-* `Symlink`를 활용합니다.
+* Utilize `Symlink`.
 
-#### Symlink란?
+#### What is a Symlink?
 
-* 심링크(symlink) 또는 심볼릭 링크(symbolic link)는 리눅스의 파일의 한 종류로, 어떤 파일 시스템에서든 이미 생성되어 있는 다른 파일이나 디렉토리를 참조할 수 있습니다.
+* A symlink (symbolic link) is a type of file in Linux that can reference another file or directory already created, in any file system.
 
-* 심링크를 생성하는 문법은 아래와 같습니다.<br>
-  `ln -s <연결하고자 하는 원본 파일/폴더의 경로> <새로 생성하는 링크의 경로>`
+* The syntax to create a symlink is as follows:<br>
+  `ln -s <path to the original file/folder> <path to the new link>`
 
-=> 외부 사용자 디렉토리에서 일렉트론 앱 내부 함수를 참조할 수 있도록 하기 위해서 symlink를 사용하기로 했습니다.
+=> To allow the external user directory to reference internal Electron app functions, we decided to use symlink.
 
-#### SymLink를 통해 사용자 디렉토리에서 reactree 함수 참조하기
+#### Referencing the reactree function from the user directory via SymLink
 
-* Node.js의 Child process `exec()`를 통해 `symlink`를 생성합니다.
-* 사용자 디렉토리의 `src/index.js` 파일에서 `symlink`로 생성한 `reactree()`함수를 import 합니다.
+* Create a `symlink` using the Node.js Child process `exec()`.
+* In the `src/index.js` file of the user directory, import the `reactree()` function created through the `symlink`.
 ```js
 // public/Electron/ipc-handler.js
 
@@ -323,19 +325,19 @@ appendFileSync(`${filePath}/src/index.js`, JScodes);
 
 <br>
 
-## 3. 사용자 디렉토리에서 rootFiberNode를 어떻게 전송할 수 있을까?
+## 3. How to transmit the rootFiberNode from the user directory?
 
-### 시도한 방법
+### Attempted Methods
 
-* 사용자코드 `<div id="root">` key값에 fiber 데이터 `json`을 할당하고, `view.webContents.executeJavascript()`를 실행해서 데이터 가져오기
-  - 기능 구현은 되지만, 데이터용량 제한 및 유지보수 측면에서 로직이 비합리적이라 판단했습니다.
+* Assign the fiber data `json` to the `<div id="root">` key value in the user code and retrieve the data by executing `view.webContents.executeJavascript()`
+  - Although the functionality worked, I concluded that this approach was impractical due to data size limitations and maintainability issues.
 
-### 결론
+### Conclusion
 
-`electron`으로 만들어진 서비스 - VScode, Slack에서는 필요한 데이터를 로컬에 `json`파일로 다운받는다는 사실을 알게 되었습니다.
-이에 착안하여 사용자 프로젝트 컴포넌트 트리 구조 데이터를 `json`으로 다운받고, 그 파일을 읽어서 컴포넌트 구조를 시각화하는 방향으로 진행했습니다.
+I discovered that services built with `electron`, like VScode and Slack, download necessary data as `json` files locally.  
+Inspired by this, I decided to proceed by downloading the component tree structure data of the user project as a `json` file and reading that file to visualize the component structure.
 
-1. `exec()`를 통해 사용자 프로젝트를 개발모드로 실행시키면 `index.js`에서 symlink로 참조된 `reactree()`함수가 실행됩니다.
+1. When the user project is run in development mode via `exec()`, the `reactree()` function, referenced via symlink in `index.js`, is executed.
     ```js
     // public/Electron/ipc-handler.js
 
@@ -352,7 +354,7 @@ appendFileSync(`${filePath}/src/index.js`, JScodes);
     );
     ```
 
-2. `reactree()`함수가 실행되면 fiber 데이터가 들어있는 `data.json`을 사용자 로컬 저장공간에 다운받습니다.
+2. When the `reactree()` function is executed, the `data.json` file containing the fiber data is downloaded to the user's local storage.
     ```js
     // reactree-frontend/src/utils/reactree.js
 
@@ -378,7 +380,7 @@ appendFileSync(`${filePath}/src/index.js`, JScodes);
       }
     };
     ```
-3. 일렉트론 `ipc-handler`에서 `data.json`을 읽어서 renderer process로 데이터를 전송합니다.
+3. The Electron `ipc-handler` reads the `data.json` file and sends the data to the renderer process.
     ```js
     // public/Electron/ipc-handler.js
 
@@ -392,35 +394,35 @@ appendFileSync(`${filePath}/src/index.js`, JScodes);
     ```
 <br>
 
-## 4. 사용자 프로젝트가 큰 경우 데이터 전송의 안정성을 어떻게 높일 수 있을까?
+## 4. How to improve data transmission stability in large user projects?
 
-### 시도한 방법
+### Attempted Methods
 
-* 초기에는 추출한 데이터를 다운로드할 수 있는 링크를 생성해 로컬 환경에 사용자의 프로젝트 정보를 `json` 형식으로 다운받았습니다. <br>
+* Initially, I created a link to download the extracted data in JSON format to the local environment with the user's project information. <br>
 
-### 문제 발생
+### Issue Encountered
 
-* 이 때 규모가 작은 프로젝트의 경우 문제가 없었지만, 프로젝트의 규모가 커질 경우 데이터가 끊기는 현상이 발생했습니다.
-* 조사 결과 URI 스킴 방식에는 데이터 제한이 있었고, 이는 큰 데이터를 처리하기에 적합한 방식이 아니라는것을 알게 되었습니다.
+* While there was no issue with smaller projects, I encountered data truncation issues when dealing with larger projects.
+* After investigation, I found that the URI scheme method had data limitations, making it unsuitable for handling large amounts of data.
 
-### 결론
+### Conclusion
 
-* `Blob` 객체 활용
+* Utilizing the `Blob` object
 
-#### `Blob`이란?
+#### What is a `Blob`?
 
-`Blob`은 binary large object의 약자입니다. 이름과 같이 데이터를 바이너리 객체 형태로 저장할 수 있습니다.
+`Blob` stands for binary large object. As the name suggests, it allows storing data in the form of binary objects.
 
--> `Blob` 데이터에 접근하기 위해, `Blob` 객체를 가리키는 URL을 만드는 과정이 필요했습니다
+-> To access `Blob` data, I needed to create a URL that points to the `Blob` object.
 
-1. `Blob`의 `createObjectURL()`을 사용해 주어진 객체를 가르키는 URL을 DOMstring으로 변환합니다. 이 URL은 윈도우 창이 닫히면 자동으로 삭제됩니다.
+1. Using `Blob`'s `createObjectURL()`, I converted the given object into a URL as a DOMString. This URL is automatically revoked when the window is closed.
 
   ```js
   const blob = new Blob([fiberJson], { type: "text/json;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   ```
 
-2. `<a>` 요소를 생성하고, `href` 속성에 위에서 생성한 `Blob` URL을 설정합니다. 그리고 `download` 속성을 설정하여 파일 다운로드를 위한 링크로 사용합니다.
+2. Create an `<a>` element and set the `href` attribute to the `Blob` URL created above. Then, set the `download` attribute to use it as a link for file downloading.
 
   ```js
   const link = document.createElement("a");
@@ -428,7 +430,7 @@ appendFileSync(`${filePath}/src/index.js`, JScodes);
   link.download = "data.json";
   ```
 
-3. 다운로드가 완료되면 `revokeObjectURL()`을 사용해 `Blob` URL을 무효화하고, 더 이상 필요하지 않은 리소스를 해제합니다. 이를 통해 메모리 누수를 방지할 수 있습니다.
+3. Once the download is complete, use `revokeObjectURL()` to invalidate the `Blob` URL and release the resources that are no longer needed. This helps prevent memory leaks.
 
   ```js
   URL.revokeObjectURL(url);
@@ -451,57 +453,57 @@ appendFileSync(`${filePath}/src/index.js`, JScodes);
 
 - Jest, playwright
 
-#### `Electron`을 사용한 이유
+#### Reasons for Using `Electron`
 
-* 시스템 리소스 접근
-  - 웹뷰 페이지 내에서 Node.js API를 직접 사용해서 파일 시스템에 접근할 수 있습니다. 이는 웹 브라우저에서는 일반적으로 사용할 수 없는 기능입니다.
-* 웹 개발 기술 활용
-  - 프론트엔드 영역 Renderer 프로세스에서는 Chromium을, 백엔드 영역 Main 프로세스에서는 Node.js를 사용하기 때문에, 기존의 웹 개발 기술을 활용할 수 있습니다.
-* 크로스 플랫폼 호환성
-  - Windows, macOS, Linux 등 다양한 운영 체제에서 실행할 수 있는 데스크톱 애플리케이션을 개발할 수 있습니다.
+* Access to system resources
+  - You can directly use Node.js APIs within the webview page to access the file system, which is generally not possible in a web browser.
+* Utilization of web development technologies
+  - Since Chromium is used in the Renderer process (frontend) and Node.js is used in the Main process (backend), existing web development technologies can be utilized.
+* Cross-platform compatibility
+  - You can develop desktop applications that run on various operating systems such as Windows, macOS, and Linux.
 
 <br>
 
 # Features
 
-- Electron [ 이건화 40% / 김태우 30% / 박민주 30% ]
-    - 시스템 리소스 접근으로 사용자의 로컬 저장소에 접근이 가능합니다.
-    - `child_process` 로 사용자가 선택한 프로그램을 실행합니다.
-    - 격리된 컨텍스트(`main`, `renderer`)에서 안전한 양방향 동기식 브릿지를 제공합니다.
-- 심링크 파일 생성 [ 이건화 50% / 김태우 30% / 박민주 20% ]
-    - 올바른 폴더를 선택하면 사용자의 프로젝트에 reactree함수를 실행할 수 있게 만드는 `Symlink` 파일을 생성합니다.
-- 컴포넌트 계층 구조 데이터 추출 [ 이건화 20% / 김태우 40% / 박민주 40% ]
-    - 재귀함수 `createNode()` 를 통해서 `fiber`객체에서 컴포넌트 계층 구조 데이터를 트리 구조로 추출합니다.
-- 트리 구조 데이터 다운받기 [ 이건화 40% / 김태우 40% / 박민주 20% ]
-    - `폴더 선택` 버튼을 누르면 `data.json` 다운로드 동의를 받는 창이 뜨고, electron view에서 사용자 코드를 렌더링해서 보여줍니다. (개발모드 렌더링 화면)
-    - 이후에 바로 `data.json`을 다운로드 받고 이를 바탕으로 트리 구조를 화면에 렌더링하고, 바로 `data.json`은 삭제됩니다.
-- 컴포넌트 계층 구조 시각화 [ 이건화 30% / 김태우 20% / 박민주 50% ]
-    - 트리 구조에서 tag가 0인 `fiberNode`는 `FunctionComponent`를 뜻하는데, 이는 파란색으로 표시됩니다.
-    - 트리 구조에서 마우스 스크롤을 하면 줌인/줌아웃이 되고, 드래그를 하면 트리 구조가 커서 위치에 따라서 이동합니다.
-    - 트리 구조 상단의 WIDTH/HEIGHT 슬라이더 바를 조절하면 트리구조가 가로/세로 방향으로 작아지거나 커집니다.
-- 트리 구조 모달창 [ 이건화 20% / 김태우 30% / 박민주 50% ]
-    - 트리 구조에서 노드위에 마우스 커서를 올리면 컴포넌트 정보를 보여주는 모달창이 보입니다.
-    - 일렉트론앱 window 가로와 모달창 가로 길이에 따라서 커서 오른쪽에 보이던 모달창이 안 보일 정도로 마우스가 오른쪽에 가까워지면 모달창이 왼쪽에서 보입니다. (반응형)
-    - 모달창에는 컴포넌트의 이름, `props`, `local state`와 `redux state`을 보여줍니다.
-- 코드 뷰어 [ 이건화 40% / 김태우 20% / 박민주 40% ]
-    - 트리의 노드를 클릭시 해당 컴포넌트가 렌더링된 위치의 js파일 경로와 코드를 보여줍니다.
-    - 컴포넌트가 아닌 노드를 클릭하거나 X버튼을 누르면 코드뷰어와 경로정보가 사라집니다.
-- 폴더 선택 [ 이건화 30% / 김태우 50% / 박민주 20% ]
-    - 잘못된 폴더를 선택하면 에러 팝업창과 에러 페이지가 렌더링됩니다.
-    - 폴더선택 버튼을 한 번 더 누르면 새로운 프로젝트를 불러와서 트리 구조를 그릴 수 있습니다.
+- Electron [ Geonhwa 40% / Taewoo 30% / Minju 30% ]
+  - Allows access to the user's local storage via system resource access.
+  - Runs the program selected by the user through `child_process`.
+  - Provides a secure synchronous two-way bridge in isolated contexts (`main`, `renderer`).
+- Symlink File Creation [ Geonhwa 50% / Taewoo 30% / Minju 20% ]
+  - When the correct folder is selected, it generates a `Symlink` file that allows the `reactree` function to run in the user's project.
+- Component Hierarchy Data Extraction [ Geonhwa 20% / Taewoo 40% / Minju 40% ]
+  - Using the recursive function `createNode()`, the component hierarchy data is extracted from the `fiber` object into a tree structure.
+- Downloading the Tree Structure Data [ Geonhwa 40% / Taewoo 40% / Minju 20% ]
+  - When the `Select Folder` button is clicked, a prompt appears asking for consent to download `data.json`, and the user's code is rendered in the Electron view (development mode rendering screen).
+  - Then, `data.json` is immediately downloaded, the tree structure is rendered based on it, and `data.json` is deleted.
+- Visualizing the Component Hierarchy [ Geonhwa 30% / Taewoo 20% / Minju 50% ]
+  - In the tree structure, a `fiberNode` with a tag of 0 represents a `FunctionComponent`, which is displayed in blue.
+  - Scrolling the mouse zooms in/out of the tree structure, and dragging moves the tree structure according to the cursor position.
+  - Adjusting the WIDTH/HEIGHT slider bar at the top of the tree structure shrinks or enlarges the tree structure horizontally/vertically.
+- Tree Structure Modal [ Geonhwa 20% / Taewoo 30% / Minju 50% ]
+  - When hovering over a node in the tree structure, a modal appears showing component information.
+  - The modal, which initially appears on the right side of the cursor, will switch to the left if the cursor is too close to the right edge, depending on the width of the Electron window and modal.
+  - The modal shows the component's name, `props`, `local state`, and `redux state`.
+- Code Viewer [ Geonhwa 40% / Taewoo 20% / Minju 40% ]
+  - Clicking on a node in the tree displays the path and code of the JS file where the component is rendered.
+  - If a non-component node is clicked or the X button is clicked, the code viewer and path information disappear.
+- Folder Selection [ Geonhwa 30% / Taewoo 50% / Minju 20% ]
+  - If the wrong folder is selected, an error popup and error page are rendered.
+  - Clicking the folder selection button again allows the user to load a new project and render its tree structure.
 
 <br>
 
 # Timeline
 
-프로젝트 기간 : 2023.03.06(월) ~ 2023.03.30(목)
+Project Duration: March 6, 2023 (Mon) ~ March 30, 2023 (Thu)
 
-- 1주차: 아이디어 기획 및 목업 작성
-- 2~3주차: 기능 개발
-- 4주차: 테스트코드 작성, 발표
+- Week 1: Idea planning and mockup creation
+- Week 2-3: Feature development
+- Week 4: Writing test code, presentation
 
 # Contacts
 
-- 이건화 - ghlee2588@gmail.com
-- 김태우 - taewoo124@gmail.com
-- 박민주 - jsi04049@gmail.com
+- Geonhwa Lee - ghlee2588@gmail.com
+- Taewoo Kim - taewoo124@gmail.com
+- Minju Park - mjuudev@gmail.com
